@@ -101,10 +101,10 @@ public:
 		TOP_NODE tempTailNode;
 		st_NODE* nextNode;
 
-
+		LONG64 newCount = InterlockedIncrement64(&m_TailUniqueNum);
 		while (true)
 		{
-			LONG64 newCount = InterlockedIncrement64(&m_TailUniqueNum);
+			//LONG64 newCount = InterlockedIncrement64(&m_TailUniqueNum);
 
 			tempTailNode.pTopNode = m_pTail->pTopNode;
 			tempTailNode.lCount = m_pTail->lCount;
@@ -117,16 +117,16 @@ public:
 				{
 					InterlockedIncrement64(&m_QueueSize);
 
-					InterlockedCompareExchange128((LONG64*)m_pTail, newCount, (LONG64)tempTailNode.pTopNode->NextNode, (LONG64*)&tempTailNode);
+					InterlockedCompareExchange128((LONG64*)m_pTail, newCount, (LONG64)newNode, (LONG64*)&tempTailNode);
 
 					break;
 				}
 			}
-			// newNode 가 다른 스레드에서 삽입되었으나 m_pTail 작업이 마무리 되지 않은채로 컨텍스트 스위칭이 일어난 경우에는
-			// m_pTail 로 복사를 시도하고 성공한 경우 다음 루프에서 내가 삽입과정을 마무리할수 있다.
+			// newNode 가 다른 스레드에서 삽입되었으나 m_pTail 작업이 마무리 되지 않은채로 컨텍스트 스위칭이 일어나거나
+			// 이미 바뀌었거나 일단 m_pTail을 다음노드로 밀어주고 다음 loop에 삽입하는것을 시도한다
 			else
 			{
-				int x = InterlockedCompareExchange128((LONG64*)m_pTail, newCount, (LONG64)tempTailNode.pTopNode->NextNode, (LONG64*)&tempTailNode);
+				InterlockedCompareExchange128((LONG64*)m_pTail, newCount, (LONG64)tempTailNode.pTopNode->NextNode, (LONG64*)&tempTailNode);
 			}
 		}
 
@@ -167,23 +167,22 @@ public:
 				//	__debugbreak();
 				return FALSE;
 			}
-			else
+			
+
+
+			if (tempTailNode.pTopNode->NextNode != nullptr)
 			{
-
-
-				if (tempTailNode.pTopNode->NextNode != nullptr)
-				{
-
+					//삽입되었으니 tail밀어줌
 					LONG64 newCount = InterlockedIncrement64(&m_TailUniqueNum);
 					InterlockedCompareExchange128((LONG64*)m_pTail, newCount, (LONG64)tempTailNode.pTopNode->NextNode, (LONG64*)&tempTailNode);
-				}
+				
+			}
 
-				// 헤드의 next에 노드가 존재한다면
-				if (nextNode != nullptr)
+			else
+			{
+				*data = nextNode->data;
+				if (InterlockedCompareExchange128((LONG64*)m_pHead, newHead, (LONG64)tempHeadNode.pTopNode->NextNode, (LONG64*)&tempHeadNode))
 				{
-					*data = nextNode->data;
-					if (InterlockedCompareExchange128((LONG64*)m_pHead, newHead, (LONG64)tempHeadNode.pTopNode->NextNode, (LONG64*)&tempHeadNode))
-					{
 
 						//test
 						//tempHeadNode.pTopNode->data.~T();
@@ -195,10 +194,10 @@ public:
 						InterlockedDecrement64(&m_QueueSize);
 
 						break;
-					}
-
 				}
+
 			}
+			
 		}
 
 		return TRUE;
