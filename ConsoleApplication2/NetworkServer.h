@@ -78,6 +78,7 @@ public:
 
 private:
 
+	
 	struct st_Packet
 	{
 		CPacket* Packet;
@@ -101,6 +102,9 @@ private:
 		st_Packet SendBuf[WSABUFSIZE];
 		volatile BYTE sendFlag;
 		volatile SHORT SendCnt;
+
+	
+
 	};
 
 
@@ -121,10 +125,10 @@ private:
 	CPacket_TLS* mSerialBuffer; // TLS
 	BOOL ThreadExit;
 
-	short dummy = 0;
 
-	SRWLOCK Send_Lock;
 
+	//SRWLOCK Send_Lock;
+	
 
 	CMemoryPool<stSESSION>* mSessionPool;
 	//stSESSION* mSessionArray;
@@ -144,14 +148,15 @@ private:
 	VOID SendProc(stSESSION*);
 
 	VOID RecvPost(stSESSION*);
+	VOID RecvPost2(stSESSION*);
 	VOID SendPost(stSESSION*);
 
 	stSESSION* FindSession(UINT64);
-	UINT64 MakeSessionID(USHORT, UINT64);
+//	UINT64 MakeSessionID(USHORT, UINT64);
 
 	BYTE ReleaseSession(stSESSION*);
 
-	BYTE AcquireSession(UINT64, stSESSION*);
+//	BYTE AcquireSession(UINT64, stSESSION*);
 
 	VOID TryLeaveSession(stSESSION*);
 

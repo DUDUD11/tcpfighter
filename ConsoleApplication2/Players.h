@@ -24,7 +24,8 @@ public:
 
 	std::list<Player*> PlayerList; 
 	SRWLOCK playerlistlock;
-	Concurrent_Unordered_set<Player*> PlayerRemove;
+	Concurrent_Unordered_set<UINT64> PlayerRemove;
+	bool playerremove_check[100000] = { 0, };
 
 
 	Players()

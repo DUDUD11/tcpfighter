@@ -26,7 +26,7 @@ int main()
 	
 	wprintf(L"MainThread Start\n");
 
-	GameServer.Start(L"127.0.0.1", SERVERPORT, 4, 4, true, 10000);
+	GameServer.Start(L"127.0.0.1", SERVERPORT, 2, 4, true, 10000);
 
 	DWORD startTime, EndTime;
 	startTime = timeGetTime();

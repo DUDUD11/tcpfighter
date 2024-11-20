@@ -21,7 +21,7 @@ void Content::Character_Movement_Start_Send(int SessionID, int type, Players::Pl
             {
                 Players::Player* tmp = *iter;
                 if (tmp == player) continue;
-                if (m_Players.PlayerRemove.find(tmp)) continue;
+                if (m_Players.PlayerRemove.find(tmp->sessionID)) continue;
 
 
                 Proxy::GetInstance()->Character_Movement_Start_Send_Proxy(tmp->sessionID, type, player->ID, player->Direction, player->X, player->Y);
@@ -52,7 +52,7 @@ void Content::Character_Movement_Stop_Send(int SessionID, int type, Players::Pla
             {
                 Players::Player* tmp = *iter;
                 if (tmp == player) continue;
-                if (m_Players.PlayerRemove.find(tmp)) continue;
+                if (m_Players.PlayerRemove.find(tmp->sessionID)) continue;
             
                 Proxy::GetInstance()->Character_Movement_Stop_Send_Proxy(tmp->sessionID, type, player->ID, player->Direction, player->X, player->Y);
 
@@ -74,7 +74,7 @@ void Content::Character_Move_Stop_Recv(int SessionID,  Players::Player* player, 
 {
     Profiler_Manager::Profile p(L"move stop_r");
 
-    if (m_Players.PlayerRemove.find(player)) return;
+    if (m_Players.PlayerRemove.find(player->sessionID)) return;
 
     unsigned char Direction;
     unsigned short X;
@@ -109,7 +109,7 @@ void Content::Character_Move_Start_Recv(int SessionID, Players::Player* player, 
 {
     Profiler_Manager::Profile p(L"move start_r");
 
-    if (m_Players.PlayerRemove.find(player)) return;
+    if (m_Players.PlayerRemove.find(player->sessionID)) return;
 
     unsigned char Direction;
     unsigned short X;
@@ -179,7 +179,7 @@ void Content::Character_Damage(int type, Players::Player* attack_player, Players
             for (std::list<Players::Player*>::iterator iter = sector.Sector_Map[i][j].begin(); iter != sector.Sector_Map[i][j].end(); iter++)
             {
                 Players::Player* tmp = *iter;   
-                if (m_Players.PlayerRemove.find(tmp)) continue;
+                if (m_Players.PlayerRemove.find(tmp->sessionID)) continue;
 
                 Proxy::GetInstance()->Character_Damage_Proxy(tmp->sessionID, type , attack_player->ID, damaged_player->ID, damaged_player->HP);
 
@@ -217,7 +217,7 @@ void Content::Character_Generate_Other(int SessionID, int type, Players::Player*
             {
                 Players::Player* tmp = *iter;
                 if (tmp == player) continue;
-                if (m_Players.PlayerRemove.find(tmp)) continue;
+                if (m_Players.PlayerRemove.find(tmp->sessionID)) continue;
   
                 Proxy::GetInstance()->Character_Generate_Other_Proxy(SessionID, type, tmp->ID, tmp->Left, tmp->X, tmp->Y, tmp->HP);
 
@@ -255,7 +255,7 @@ void Content::Character_Delete(int type, Players::Player* player)
             {
                 Players::Player* tmp = *iter;
                 if (tmp == player) continue;
-                if (m_Players.PlayerRemove.find(tmp)) continue;
+                if (m_Players.PlayerRemove.find(tmp->sessionID)) continue;
 
                 Proxy::GetInstance()->Character_Delete_Proxy(tmp->sessionID, type, player->ID);
 
@@ -277,7 +277,7 @@ void Content::Character_Attack_1_Start_Send(int type, Players::Player* player, u
     int sector_y = player->Y / Sector_Size;
 
     // 죽은 사람의 공격은 무시된다.
-    if (m_Players.PlayerRemove.find(player))
+    if (m_Players.PlayerRemove.find(player->sessionID))
     {
         return;
     }
@@ -296,7 +296,7 @@ void Content::Character_Attack_1_Start_Send(int type, Players::Player* player, u
                 Players::Player* tmp = *iter;
 
                 // 접속이 끊긴 사람에게 보내지 않는다.
-                if (tmp == player || m_Players.PlayerRemove.find(tmp)) continue;
+                if (tmp == player || m_Players.PlayerRemove.find(tmp->sessionID)) continue;
 
                 if (Left_Dir == dfPACKET_MOVE_DIR_LL)
                 {
@@ -342,7 +342,7 @@ void Content::Character_Attack_1_Start_Send(int type, Players::Player* player, u
 void Content::Character_Attack_1_Start_Recv(Players::Player* player, CPacket_TLS* packet)
 {
     Profiler_Manager::Profile p(L"at1_r");
-    if (m_Players.PlayerRemove.find(player)) return;
+    if (m_Players.PlayerRemove.find(player->sessionID)) return;
     unsigned char Direction;
     unsigned short X;
     unsigned short Y;
@@ -366,7 +366,7 @@ void Content::Character_Attack_2_Start_Send(int type, Players::Player* player, u
     int sector_y = player->Y / Sector_Size;
 
     // 죽은 사람의 공격은 무시된다.
-    if (m_Players.PlayerRemove.find(player))
+    if (m_Players.PlayerRemove.find(player->sessionID))
     {
         return;
     }
@@ -384,7 +384,7 @@ void Content::Character_Attack_2_Start_Send(int type, Players::Player* player, u
                 Players::Player* tmp = *iter;
 
                 // 접속이 끊긴 사람에게 보내지 않는다.
-                if (tmp == player || m_Players.PlayerRemove.find(tmp)) continue;
+                if (tmp == player || m_Players.PlayerRemove.find(tmp->sessionID)) continue;
 
 
                 if (Left_Dir == dfPACKET_MOVE_DIR_LL)
@@ -430,7 +430,7 @@ void Content::Character_Attack_2_Start_Send(int type, Players::Player* player, u
 void Content::Character_Attack_2_Start_Recv(Players::Player* player, CPacket_TLS* packet)
 {
     Profiler_Manager::Profile p(L"at2_r");
-    if (m_Players.PlayerRemove.find(player)) return;
+    if (m_Players.PlayerRemove.find(player->sessionID)) return;
     unsigned char Direction;
     unsigned short X;
     unsigned short Y;
@@ -452,7 +452,7 @@ void Content::Character_Attack_3_Start_Send(int type, Players::Player* player, u
     int sector_y = player->Y / Sector_Size;
 
     // 죽은 사람의 공격은 무시된다.
-    if (m_Players.PlayerRemove.find(player))
+    if (m_Players.PlayerRemove.find(player->sessionID))
     {
         return;
     }
@@ -470,7 +470,7 @@ void Content::Character_Attack_3_Start_Send(int type, Players::Player* player, u
                 Players::Player* tmp = *iter;
 
                 // 접속이 끊긴 사람에게 보내지 않는다.
-                if (tmp == player || m_Players.PlayerRemove.find(tmp)) continue;
+                if (tmp == player || m_Players.PlayerRemove.find(tmp->sessionID)) continue;
 
 
                 if (Left_Dir == dfPACKET_MOVE_DIR_LL)
@@ -518,7 +518,7 @@ void Content::Character_Attack_3_Start_Recv(Players::Player* player, CPacket_TLS
 {
     Profiler_Manager::Profile p(L"at3_r");
 
-    if (m_Players.PlayerRemove.find(player)) return;
+    if (m_Players.PlayerRemove.find(player->sessionID)) return;
     unsigned char Direction;
     unsigned short X;
     unsigned short Y;
@@ -534,7 +534,7 @@ void Content::Character_Attack_3_Start_Recv(Players::Player* player, CPacket_TLS
 void Content::System_ECHO_recv(int SessionID, Players::Player* player, CPacket_TLS* packet)
 {
 
-    if (m_Players.PlayerRemove.find(player)) return;
+    if (m_Players.PlayerRemove.find(player->sessionID)) return;
     int time;
     *packet >> time;
     Proxy::GetInstance()->Character_Echo_Proxy(SessionID, dfPACKET_SC_ECHO, time);
@@ -582,7 +582,7 @@ void Content::disconnect(Players::Player* player)
 {
  
 
-    m_Players.PlayerRemove.insert(player);
+    m_Players.PlayerRemove.insert(player->sessionID);
     Character_Delete(dfPACKET_SC_DELETE_CHARACTER, player);
 
 }
@@ -602,7 +602,9 @@ void Content::disconnectFromServer(UINT64 SessionID)
 
         }
     }
-    m_Players.PlayerRemove.insert(tmp);
+
+    m_Players.PlayerRemove.insert(tmp->sessionID);
+
     
     Character_Delete(dfPACKET_SC_DELETE_CHARACTER, tmp);
 
@@ -758,7 +760,7 @@ void Content::Logic()
 
         Players::Player* tmp = *iter;
 
-        if (m_Players.PlayerRemove.find(tmp))
+        if (m_Players.PlayerRemove.find(tmp->sessionID))
         {
             continue;
         }
@@ -843,9 +845,9 @@ void Content::Enqueue_Movement_Sector(Players::Player* player, unsigned short ol
     {
         Profiler_Manager::Profile p(L"Enqueue_Movement_write");
 
-        if (m_Players.PlayerRemove.find(player))
+        if (m_Players.PlayerRemove.find(player->sessionID))
         {
-            sector.Write_UnLock();
+            //sector.Write_UnLock();
             return;
         }
 
@@ -895,9 +897,9 @@ void Content::Enqueue_Movement_Sector(Players::Player* player, unsigned short ol
                     for (std::list<Players::Player*>::iterator iter = sector.Sector_Map[i][j].begin(); iter != sector.Sector_Map[i][j].end(); iter++)
                     {
                         Players::Player* tmp = *iter;
-                        if (m_Players.PlayerRemove.find(player)) break;
+                        if (m_Players.PlayerRemove.find(player->sessionID)) break;
                         if (tmp == player) continue;
-                        if (m_Players.PlayerRemove.find(tmp)) continue;
+                        if (m_Players.PlayerRemove.find(tmp->sessionID)) continue;
                         {
                             Profiler_Manager::Profile p(L"Enqueue_Movement_proxy");
                             Proxy::GetInstance()->Character_Delete_Proxy(tmp->sessionID, dfPACKET_SC_DELETE_CHARACTER, player->ID);      
@@ -925,9 +927,9 @@ void Content::Enqueue_Movement_Sector(Players::Player* player, unsigned short ol
                     {
 
                         Players::Player* tmp = *iter;
-                        if (m_Players.PlayerRemove.find(player)) break;
+                        if (m_Players.PlayerRemove.find(player->sessionID)) break;
                         if (tmp == player) continue;
-                        if (m_Players.PlayerRemove.find(tmp)) continue;
+                        if (m_Players.PlayerRemove.find(tmp->sessionID)) continue;
                         {
                             Profiler_Manager::Profile p(L"Enqueue_Movement_proxy");
 
@@ -980,7 +982,7 @@ void Content::send_moving_character_toNewUser(Players::Player* player)
             for (std::list<Players::Player*>::iterator iter = sector.Sector_Map[i][j].begin(); iter != sector.Sector_Map[i][j].end(); iter++)
             {
                 Players::Player* tmp = *iter;
-                if (m_Players.PlayerRemove.find(tmp)) continue;
+                if (m_Players.PlayerRemove.find(tmp->sessionID)) continue;
                 // 남이 움직이고 있으면 나에게 알린다
 
                 if (tmp->Moving)

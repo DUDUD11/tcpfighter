@@ -1,6 +1,5 @@
 ﻿#include "NetworkServer.h"
 
-//extern HANDLE hEvent;
 
 
 UINT WINAPI NetworkServer::_WorkerThread(PVOID p)
@@ -31,7 +30,7 @@ UINT WINAPI NetworkServer::_SendThread(PVOID p)
 
 VOID NetworkServer::SendThread()
 {
-	//프레임
+	
 
 	SHORT sendThreadIdx = InterlockedIncrement16(&mSendThreadIdx) - 2;
 
@@ -51,7 +50,7 @@ VOID NetworkServer::SendThread()
 		{
 
 			int cur_time = (int)timeGetTime();
-
+		
 
 			for (int SessionIndex = sendThreadIdx; SessionIndex < mMaxClientNum; SessionIndex += mSendThreadNum-1)
 			{
@@ -59,6 +58,7 @@ VOID NetworkServer::SendThread()
 
 				stSESSION* pSession = (stSESSION*)mSessionPool->At(SessionIndex);
 				{
+			
 
 					if (pSession->socket == null_socket) continue;
 
@@ -68,23 +68,27 @@ VOID NetworkServer::SendThread()
 						if (!UserMap->find(pSession->sessionID))
 						{
 							CancelIoEx((HANDLE)pSession->socket, NULL);
+			
 						}
+
+					
 
 						continue;
 					}
 
 				}
 
-				AcquireSRWLockShared(&Send_Lock);
+			//	AcquireSRWLockShared(&Send_Lock);
 
 				if (pSession->sendFlag)
 				{
-					ReleaseSRWLockShared(&Send_Lock);
+					
+				//	ReleaseSRWLockShared(&Send_Lock);
 
 					continue;
 				}
 				pSession->sendFlag = true;
-				ReleaseSRWLockShared(&Send_Lock);
+			//	ReleaseSRWLockShared(&Send_Lock);
 
 				WSABUF dataBuf[WSABUFSIZE];
 
@@ -93,12 +97,11 @@ VOID NetworkServer::SendThread()
 				{
 
 
-					AcquireSRWLockExclusive(&Send_Lock);
+				//	AcquireSRWLockExclusive(&Send_Lock);
 					pSession->sendFlag = false;
-					ReleaseSRWLockExclusive(&Send_Lock);
+				//	ReleaseSRWLockExclusive(&Send_Lock);
 					continue;
 				}
-				if (UseCnt > WSABUFSIZE) __debugbreak();
 
 				for (int i = 0; i < UseCnt; i++)
 				{
@@ -118,27 +121,30 @@ VOID NetworkServer::SendThread()
 
 				//ZeroMemory(&pSession->sendOverlapped, sizeof(OVERLAPPED));
 
-				AcquireSRWLockExclusive(&Send_Lock);
-
-
+		//		AcquireSRWLockExclusive(&Send_Lock);
 				pSession->SendCnt = UseCnt;
-
-				ReleaseSRWLockExclusive(&Send_Lock);
+		//		ReleaseSRWLockExclusive(&Send_Lock);
 
 				INT sendRetval = WSASend(pSession->socket, dataBuf, UseCnt, NULL, NULL, &pSession->sendOverlapped, NULL);
-
+		
 				if (sendRetval == SOCKET_ERROR)
 				{
-					if (WSAGetLastError() != WSA_IO_PENDING)
+					int err_code = WSAGetLastError();
+
+				
+
+					if (err_code != WSA_IO_PENDING)
 					{
 						// 소켓 연결 끊김
-
+					
+	
 						TryLeaveSession(pSession);
 					}
 					else
 					{
 						if (pSession->socket == INVALID_SOCKET)
 						{
+						
 							CancelIoEx((HANDLE)pSession->socket, NULL);
 						}
 					}
@@ -152,10 +158,11 @@ VOID NetworkServer::SendThread()
 
 VOID NetworkServer::WorkerThread()
 {
+	
 
 	mSerialBuffer->Buffer_init();
 
-	int p = InterlockedIncrement16(&dummy);
+	
 
 	while (1)
 	{
@@ -199,10 +206,18 @@ VOID NetworkServer::WorkerThread()
 		{
 			pSession->timeOut = timeGetTime();
 			RecvProc(transferredBytes, pSession);
+		
+	
+			
+
+			
+			
+
 		}
 		else if (pOverlapped == &pSession->sendOverlapped)
 		{			
 			SendProc(pSession);
+		
 		}
 
 		else
@@ -222,6 +237,8 @@ VOID NetworkServer::RecvProc(SHORT transferredBytes, stSESSION* pSession)
 	// recvQ에 transferredBytes 만큼 삽입이 되었다.
 
 	Profiler_Manager::Profile p(L"RecvProc");
+
+
 
 	pSession->recvQ.MoveRear(transferredBytes);
 
@@ -273,16 +290,17 @@ VOID NetworkServer::SendProc(stSESSION* pSession)
 
 	// Send가 완료되었으니 SendPacketpool에 있는 버퍼를 할당해제시켜준다.
 
+	
 	for (INT i = 0; i < pSession->SendCnt; i++)
 	{
 		pSession->SendPacketPool->Free((CPacket*)pSession->SendBuf[i].Packet);
 	}
+	
 
-
-	AcquireSRWLockExclusive(&Send_Lock);
+//	AcquireSRWLockExclusive(&Send_Lock);
 	pSession->SendCnt = 0;
 	pSession->sendFlag = false;
-	ReleaseSRWLockExclusive(&Send_Lock);
+//	ReleaseSRWLockExclusive(&Send_Lock);
 
 	InterlockedDecrement16(&pSession->IOCount);
 
@@ -291,6 +309,8 @@ VOID NetworkServer::SendProc(stSESSION* pSession)
 
 VOID NetworkServer::AcceptThread()
 {
+
+
 	while (1)
 	{
 
@@ -348,16 +368,19 @@ VOID NetworkServer::AcceptThread()
 
 			stSESSION* pSession = mSessionPool->Alloc();
 
-		
+	//		AcquireSRWLockExclusive(&Send_Lock);
+	//		pSession->sendFlag = true;
+	//		ReleaseSRWLockExclusive(&Send_Lock);
 
 			CreateIoCompletionPort((HANDLE)clientSocket, mIocpHandle, (ULONG_PTR)pSession, NULL);
 
 
 			pSession->timeOut = timeGetTime();
-			pSession->sessionID = InterlockedIncrement(&mClientID);
+			pSession->sessionID = InterlockedIncrement(&mClientID)-1;
 			SessionMap.insert(pSession->sessionID, pSession);
 			pSession->socket = clientSocket;
-
+			
+	
 			if (pSession->SendPacketPool == nullptr)
 			{
 				pSession->SendPacketPool = new CMemoryPool<CPacket>(Packet_Per_Client);
@@ -367,18 +390,19 @@ VOID NetworkServer::AcceptThread()
 
 			memset(&pSession->recvOverlapped, 0, sizeof(OVERLAPPED));
 			memset(&pSession->sendOverlapped, 0, sizeof(OVERLAPPED));
-			AcquireSRWLockExclusive(&Send_Lock);
-			pSession->sendFlag = false;
-			pSession->SendCnt = 0;
-			ReleaseSRWLockExclusive(&Send_Lock);
+		
 			pSession->IOCount = 0;
 			memset(pSession->SendBuf, 0, WSABUFSIZE * sizeof(st_Packet));
 
 			
 
 			OnClientJoin(pSession->sessionID);
-			RecvPost(pSession);
+			RecvPost2(pSession);
 
+		//	AcquireSRWLockExclusive(&Send_Lock);
+			pSession->sendFlag = false;
+			pSession->SendCnt = 0;
+		//	ReleaseSRWLockExclusive(&Send_Lock);
 
 
 		}
@@ -390,6 +414,9 @@ VOID NetworkServer::AcceptThread()
 VOID NetworkServer::RecvPost(stSESSION* pSession)
 {
 	Profiler_Manager::Profile p(L"RecvPost");
+
+
+
 
 	DWORD recvQFreeSize = pSession->recvQ.GetFreeSize();
 	DWORD recvQDirectEnqueueSize = pSession->recvQ.DirectEnqueueSize();
@@ -426,17 +453,79 @@ VOID NetworkServer::RecvPost(stSESSION* pSession)
 			{
 				//I/O카운트 감소는 ABORTED에서 진행해 준다.
 				CancelIoEx((HANDLE)pSession->socket, NULL);
+			
 			}
 		}
 		else
 		{
 
-		
+
 			TryLeaveSession(pSession);
 
 		}
 	}
 }
+
+VOID NetworkServer::RecvPost2(stSESSION* pSession)
+{
+	//Profiler_Manager::Profile p(L"RecvPost");
+
+	DWORD recvQFreeSize = pSession->recvQ.GetFreeSize();
+	DWORD recvQDirectEnqueueSize = pSession->recvQ.DirectEnqueueSize();
+
+
+	INT wsaBufCount = 1;
+	WSABUF dataBuf[2];
+
+	dataBuf[0].buf = pSession->recvQ.GetRearBufferPtr();
+	dataBuf[0].len = recvQDirectEnqueueSize;
+
+	if (recvQFreeSize > recvQDirectEnqueueSize)
+	{
+		wsaBufCount++;
+		dataBuf[1].buf = pSession->recvQ.GetFrontBufferPtr();
+		dataBuf[1].len = recvQFreeSize - recvQDirectEnqueueSize;
+	}
+
+	DWORD flags = 0;
+	ZeroMemory(&pSession->recvOverlapped, sizeof(pSession->recvOverlapped));
+	InterlockedIncrement16(&pSession->IOCount);
+
+	
+
+	INT retval = WSARecv(pSession->socket, dataBuf, wsaBufCount, NULL, &flags, &pSession->recvOverlapped, NULL);
+	
+
+	if (retval == SOCKET_ERROR)
+	{
+		int p = WSAGetLastError();
+
+	
+
+		if (p == WSA_IO_PENDING)
+		{
+			//WSA_IO_PENDING이라면
+			//이미 Recv가 걸려있다. Disconnect가 WSARecv가 걸려있는 이후
+			//걸렸다면 Recv를 해제시켜줘야한다.
+			if (pSession->socket == INVALID_SOCKET)
+			{
+				//I/O카운트 감소는 ABORTED에서 진행해 준다.
+				CancelIoEx((HANDLE)pSession->socket, NULL);
+				printf("WSAGetLastError %d\n", p);
+
+			}
+		}
+		else
+		{
+			
+			printf("WSAGetLastError %d\n", p);
+			TryLeaveSession(pSession);
+
+		}
+	}
+}
+
+
 
 BYTE NetworkServer::SendPacket(UINT64 sessionID, CPacket* packet)
 {
@@ -451,6 +540,11 @@ BYTE NetworkServer::SendPacket(UINT64 sessionID, CPacket* packet)
 
 
 
+	if (pSession->sessionID != sessionID)
+	{
+		__debugbreak();
+	}
+
 
 	if (pSession == NULL)
 	{
@@ -463,7 +557,7 @@ BYTE NetworkServer::SendPacket(UINT64 sessionID, CPacket* packet)
 		return FALSE;
 	}
 	*/
-
+	
 
 	packet_wrapped.Packet = packet;
 	packet_wrapped.Packet_Size = packet->GetDataSize();
@@ -522,20 +616,31 @@ BYTE NetworkServer::ReleaseSession(stSESSION* pSession)
 {
 	Profiler_Manager::Profile p(L"ReleaseSession");
 
+
+
 	OnClientLeave(pSession->sessionID);
+
+	
 
 	pSession->recvQ.ClearBuffer();
 	pSession->sendQ.Clear();
 
 	pSession->SendPacketPool->Clear();
 
-	//DWORD Timeout;
+	//AcquireSRWLockExclusive(&Send_Lock);
+	pSession->sendFlag = true;
+	//ReleaseSRWLockExclusive(&Send_Lock);
+
+
+
+	
 	InterlockedDecrement(&mCurrentClientCount);
 	
 
 	closesocket(pSession->socket);
 
 	pSession->socket = null_socket;
+	pSession->IOCount = 0;
 
 	memset(pSession->SendBuf, 0, sizeof(st_Packet) * WSABUFSIZE);
 
@@ -550,13 +655,14 @@ void NetworkServer::TryLeaveSession(stSESSION* pSession)
 {
 
 	int ret = InterlockedDecrement16(&pSession->IOCount);
+	
 
-	if (ret == 0 && !UserMap->find(pSession->sessionID))
+	if (ret == 0 && UserMap->insert_notfind(pSession->sessionID))
 	{
 		UserMap->insert(pSession->sessionID);
 		ReleaseSession(pSession);
 	}
-	//if (pSession->IOCount != 0) __debugbreak();
+	
 }
 
 CPacket* NetworkServer::Alloc_Packet(UINT64 SessionID)
@@ -609,7 +715,7 @@ NetworkServer::NetworkServer()
 VOID NetworkServer::Init(SHORT port, INT workerThreadNum, INT sendThreadNum, INT maxClientNum)
 {
 	
-	InitializeSRWLock(&Send_Lock);
+	//InitializeSRWLock(&Send_Lock);
 	mServerPort = port;
 	mWorkerThreadNum = workerThreadNum;
 	mSendThreadNum = sendThreadNum;
@@ -623,6 +729,7 @@ VOID NetworkServer::Init(SHORT port, INT workerThreadNum, INT sendThreadNum, INT
 		stSESSION* Session = (stSESSION*)mSessionPool->At(i);
 		Session->socket = null_socket;
 		Session->SendPacketPool = nullptr;
+		Session->sendFlag = true;
 	}
 
 	UserMap = new Concurrent_Unordered_set<UINT64>();

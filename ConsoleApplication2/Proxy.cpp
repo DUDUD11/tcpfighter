@@ -20,6 +20,9 @@ void Proxy::Character_Movement_Start_Send_Proxy (unsigned __int64   SessionID  ,
 	Obj->Make_Header(type, header);
 	pack->PutData((CHAR*)&header, sizeof(header));
 	*pack << ID << Direction << X << Y;
+
+
+
 	Obj->SendPacket(SessionID,pack);
 }
 
@@ -38,15 +41,15 @@ void Proxy::Character_Movement_Stop_Send_Proxy(unsigned __int64 SessionID, int t
 
 void Proxy::Character_Echo_Proxy(unsigned __int64  SessionID, int type, int time)
 {
-	/*
-	printf("Character_Echo_Proxy %d\n", SessionID);
+	
+
 	CPacket* pack = Obj->Alloc_Packet(SessionID);
 	HEADER header;
 	Obj->Make_Header(type, header);
 	pack->PutData((CHAR*)&header, sizeof(header));
 	*pack << time;
 	Obj->SendPacket(SessionID,pack);
-	*/
+	
 }
 
 void Proxy::Character_Sync_Proxy(unsigned __int64  SessionID, int type, int id, unsigned short X, unsigned short Y)

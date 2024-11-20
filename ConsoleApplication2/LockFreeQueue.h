@@ -55,13 +55,15 @@ public:
 	~CLockFreeQueue()
 	{
 		st_NODE* temp;
-		while (m_pHead->pTopNode != nullptr)
+		//while (m_pHead->pTopNode != nullptr)
+		/*
+		for(int i=0;i<m_QueueSize;i++)
 		{
 			temp = m_pHead->pTopNode;
 			m_pHead->pTopNode = m_pHead->pTopNode->NextNode;
 			m_MemoryPool->Free(temp);
 		}
-
+		*/
 		delete m_MemoryPool;
 
 		_aligned_free(m_pHead);
@@ -161,7 +163,8 @@ public:
 			nextNode = tempHeadNode.pTopNode->NextNode;
 
 			// 비었다면 이곳도 수정해야 한다.
-			if (m_QueueSize == 0 && (m_pHead->pTopNode->NextNode == nullptr))
+	//		if (m_QueueSize == 0 && (m_pHead->pTopNode->NextNode == NULL))
+			if (m_QueueSize == 0 || (nextNode == NULL))
 			{
 				data = nullptr;
 				//	__debugbreak();
@@ -170,7 +173,7 @@ public:
 			
 
 
-			if (tempTailNode.pTopNode->NextNode != nullptr)
+			if (tempTailNode.pTopNode->NextNode != NULL)
 			{
 					//삽입되었으니 tail밀어줌
 					LONG64 newCount = InterlockedIncrement64(&m_TailUniqueNum);

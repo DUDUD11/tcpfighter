@@ -21,6 +21,20 @@ public:
 
 	}
 
+	bool insert_notfind(const Key& KVal)
+	{
+		bool flag = false;
+
+		AcquireSRWLockExclusive(&srw_lock);
+		if (HashSet.find(KVal) == HashSet.end())
+		{
+			HashSet.insert(KVal);
+			flag = true;
+		}
+		ReleaseSRWLockExclusive(&srw_lock);
+		return flag;
+	}
+
 	bool find(const Key& KVal)
 	{
 		bool flag = false;

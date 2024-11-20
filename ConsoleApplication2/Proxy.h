@@ -8,6 +8,8 @@ private:
 	Proxy();
 	~Proxy();
 
+
+
 	ProxyCaller* Obj;
 
 public:
@@ -22,6 +24,7 @@ public:
 	void Set_Server(ProxyCaller* server)
 	{
 		this->Obj = server;
+
 	}
 
 

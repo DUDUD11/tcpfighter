@@ -16,7 +16,7 @@ private:
 public:
 
 	Concurrent_Unordered_map<uint64_t, Players::Player*> SessionToPlayer;
-
+	
 	Content();
 	~Content();
 

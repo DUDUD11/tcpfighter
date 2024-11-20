@@ -1,29 +1,8 @@
 #pragma once
 
-#ifndef  __PROCADEMY_MEMORY_POOL__
-#define  __PROCADEMY_MEMORY_POOL__
+
 #include <new.h>
 #include <stdio.h>
-
-/*---------------------------------------------------------------
-
-procademy MemoryPool.
-
-메모리 풀 클래스 (오브젝트 풀 / 프리리스트)
-특정 데이타(구조체,클래스,변수)를 일정량 할당 후 나눠쓴다.
-
-- 사용법.
-
-procademy::CMemoryPool<DATA> MemPool(300, FALSE);
-DATA *pData = MemPool.Alloc();
-
-pData 사용
-
-MemPool.Free(pData);
-
-// placement new 이면 node 뒷부분에 초기화여부를 넣는다.
-----------------------------------------------------------------*/
-
 
 
 template <class T>
@@ -61,7 +40,8 @@ public:
 
 		for (int i = 0; i < iBlockNum; i++)
 		{
-			Node* node = new (curNode) Node;
+		//	Node* node = new (curNode) Node;
+			Node* node = curNode;
 			node->NextNode = (Node*)(++curNode);
 			node->Node_Used_Cnt = 0;
 
@@ -75,10 +55,12 @@ public:
 	{
 		curNode = AllocPoint;
 
-		if (PlacementNew)
-		{
+	//	if (PlacementNew)
+	//	{
+		/*
 			for (int i = 0; i < Capacity; i++)
 			{
+				
 				if (curNode->Node_Used_Cnt == 0) continue;
 
 				T* node = reinterpret_cast<T*>(curNode);
@@ -86,9 +68,9 @@ public:
 
 				(Node*)(++curNode);
 			}
+			*/
 
-
-		}
+	//	}
 
 		free(AllocPoint);
 	}
@@ -101,12 +83,14 @@ public:
 
 		for (int i = 0; i < Capacity; i++)
 		{
-			if (PlacementNew)
+		//	if (PlacementNew && curNode->Node_Used_Cnt != 0)
+			/*
+			if (curNode->Node_Used_Cnt != 0)
 			{
 				T* node = reinterpret_cast<T*>(curNode);
 				node->~T();
 			}
-
+			*/
 			Node* node = curNode;
 			node->NextNode = (Node*)(++curNode);
 			node->Node_Used_Cnt = 0;
@@ -140,10 +124,10 @@ public:
 
 		ReleaseSRWLockExclusive(&srw_lock);
 
-		if (ret->Node_Used_Cnt != 0 || !PlacementNew)
-		{
+		//if (ret->Node_Used_Cnt == 0 || !PlacementNew)
+		//{
 			new (ret) T;
-		}
+		//}
 
 	
 
@@ -167,10 +151,10 @@ public:
 	
 
 		//placement new면 소멸자 호출여부
-		if (!PlacementNew)
-		{
+		//if (!PlacementNew)
+		//{
 			pData->~T();
-		}
+		//}
 
 		AcquireSRWLockExclusive(&srw_lock);
 
@@ -230,4 +214,3 @@ public:
 	// 스택 방식으로 반환된 (미사용) 오브젝트 블럭을 관리.
 };
 
-#endif __PROCADEMY_MEMORY_POOL__
